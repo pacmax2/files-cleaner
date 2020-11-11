@@ -1,4 +1,4 @@
-# Test file generator
+# File Cleaner
 Finds all duplicates in a directory and deletes them if requested and similar images using the phash. (Typescript)
 
 ##  How to use:
