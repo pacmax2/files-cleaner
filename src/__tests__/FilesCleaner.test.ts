@@ -1,6 +1,7 @@
 import { FilesCleaner } from '../classes/FilesCleaner';
 
-it('Traverses the given path ', () => {
+it('Reads all files in ./ ', () => {
   let cleaner = new FilesCleaner();
-  expect(cleaner.read()).toBe(true);
+  cleaner.read();
+  return expect(cleaner.getFiles().length).toBeGreaterThan(0);
 });
