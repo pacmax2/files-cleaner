@@ -1,9 +1,10 @@
 import fs from 'fs';
 import { join } from 'path';
+import File from './File';
 
 export class FilesCleaner {
   private dir: string;
-  private files: string[] = [];
+  private files: File[] = [];
 
   constructor(dir?: string) {
     this.dir = dir !== undefined ? dir : './';
@@ -22,7 +23,7 @@ export class FilesCleaner {
         const fileStat = fs.statSync(next);
 
         if (fileStat.isFile()) {
-          this.files.push(next);
+          this.files.push(new File(next, fileStat.size, fileStat.ctimeMs, fileStat.mtimeMs, fileStat.atimeMs));
           continue;
         } else if (fileStat.isDirectory()) {
           const files = fs.readdirSync(next);
@@ -38,15 +39,11 @@ export class FilesCleaner {
     return this.dir;
   }
 
-  public getFiles(): string[] {
+  public getFiles(): File[] {
     return this.files;
   }
 
   public setDir(value: string) {
     this.dir = value;
-  }
-
-  public setFiles(value: string[]) {
-    this.files = value;
   }
 }
