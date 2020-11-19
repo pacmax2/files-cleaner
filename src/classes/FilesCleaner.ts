@@ -1,6 +1,8 @@
 import fs from 'fs';
 import { join } from 'path';
 import File from './File';
+import crypto from 'crypto';
+import PromiseQueue from './PromiseQueue';
 
 export class FilesCleaner {
   private dir: string;
@@ -33,8 +35,36 @@ export class FilesCleaner {
         throw new Error(err);
       }
     }
+
+    this.processHash(this.files);
   }
 
+  private processHash(files: File[]): void {
+    try {
+      const tasks: any[] = [];
+
+      const hashTask = (file: File) =>
+        new Promise((resolve, reject) => {
+          const hash = crypto.createHash('sha1');
+          const stream = fs.createReadStream(file.getDir());
+          stream.on('error', (err) => reject(err));
+          stream.on('data', (chunk) => hash.update(chunk));
+          stream.on('end', () => resolve(hash.digest('hex')));
+        });
+
+      for (let i = 0; i < files.length; i++) {
+        tasks.push(hashTask(files[i]));
+      }
+      const taskQueue = new PromiseQueue(tasks, 2);
+      taskQueue.run();
+    } catch (err) {
+      throw new Error(err);
+    }
+  }
+
+  /**
+   * Calculates the nodejs Hash and phash for the traversed files, the pHash is only calculated for images.
+   */
   public getDir(): string {
     return this.dir;
   }

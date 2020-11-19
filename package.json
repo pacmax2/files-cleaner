@@ -9,6 +9,7 @@
   "scripts": {
     "test": "jest --config jest.config.json",
     "test-watch": "jest --config jest.config.json --watchAll",
+    "test-verbose": "yarn jest --config jest.config.json --runInBand --detectOpenHandles   ",
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "tslint -p tsconfig.json",
@@ -55,6 +56,7 @@
     "lib/**/*"
   ],
   "dependencies": {
+    "async": "^3.2.0",
     "jimp": "^0.16.1"
   }
 }

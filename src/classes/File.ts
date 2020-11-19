@@ -1,4 +1,4 @@
-export default class FilesCleaner {
+export default class File {
   private name: string;
   private dir: string;
   private size: number;
