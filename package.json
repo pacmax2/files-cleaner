@@ -56,7 +56,6 @@
     "lib/**/*"
   ],
   "dependencies": {
-    "async": "^3.2.0",
     "jimp": "^0.16.1"
   }
 }

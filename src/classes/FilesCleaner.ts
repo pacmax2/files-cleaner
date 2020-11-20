@@ -2,11 +2,11 @@ import fs from 'fs';
 import { join } from 'path';
 import File from './File';
 import crypto from 'crypto';
-import PromiseQueue from './PromiseQueue';
 
 export class FilesCleaner {
   private dir: string;
   private files: File[] = [];
+  private unprocessed: File[] = [];
 
   constructor(dir?: string) {
     this.dir = dir !== undefined ? dir : './';
@@ -23,9 +23,9 @@ export class FilesCleaner {
 
       try {
         const fileStat = fs.statSync(next);
-
         if (fileStat.isFile()) {
-          this.files.push(new File(next, fileStat.size, fileStat.ctimeMs, fileStat.mtimeMs, fileStat.atimeMs));
+          const file : File = new File(next, fileStat.size, fileStat.ctimeMs, fileStat.mtimeMs, fileStat.atimeMs);
+          this.files.push(file);
           continue;
         } else if (fileStat.isDirectory()) {
           const files = fs.readdirSync(next);
@@ -36,29 +36,38 @@ export class FilesCleaner {
       }
     }
 
-    this.processHash(this.files);
+    // Sorting by file size
+    this.files.sort((a, b): any => {
+      return b.getSize() - a.getSize();
+    });
   }
 
-  private processHash(files: File[]): void {
-    try {
-      const tasks: any[] = [];
+  // Will be used only for files greater than 500-1gb.
+  private getShaStream(file: File): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const hash = crypto.createHash('sha1');
+      const stream = fs.createReadStream(file.getDir());
 
-      const hashTask = (file: File) =>
-        new Promise((resolve, reject) => {
-          const hash = crypto.createHash('sha1');
-          const stream = fs.createReadStream(file.getDir());
-          stream.on('error', (err) => reject(err));
-          stream.on('data', (chunk) => hash.update(chunk));
-          stream.on('end', () => resolve(hash.digest('hex')));
-        });
+      stream.on('error', (err) => reject(err));
+      stream.on('data', (chunk) => hash.update(chunk));
+      stream.on('end', () => resolve(hash.digest('hex')));
+    });
+  }
 
-      for (let i = 0; i < files.length; i++) {
-        tasks.push(hashTask(files[i]));
-      }
-      const taskQueue = new PromiseQueue(tasks, 2);
-      taskQueue.run();
-    } catch (err) {
-      throw new Error(err);
+  private getShaSync(file: File): string {
+    if(file.getSize() === 0){
+      return 'none';
+    }
+
+    const hash = crypto.createHash('sha1');
+    const data = fs.readFileSync(file.getDir());
+    hash.update(data);
+    return hash.digest('hex');
+  }
+
+  public  processHash(): void {
+    for(const f of this.files){
+      f.setHash(this.getShaSync(f));
     }
   }
 
