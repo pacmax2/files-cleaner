@@ -6,10 +6,12 @@ import crypto from 'crypto';
 export class FilesCleaner {
   private dir: string;
   private files: File[] = [];
-  private unprocessed: File[] = [];
+  private map: Map<string, File>;
+  private dups: File[] = []; // duplicated files
 
   constructor(dir?: string) {
     this.dir = dir !== undefined ? dir : './';
+    this.map = new Map<string, File>();
   }
 
   /**
@@ -24,7 +26,7 @@ export class FilesCleaner {
       try {
         const fileStat = fs.statSync(next);
         if (fileStat.isFile()) {
-          const file : File = new File(next, fileStat.size, fileStat.ctimeMs, fileStat.mtimeMs, fileStat.atimeMs);
+          const file: File = new File(next, fileStat.size, fileStat.ctimeMs, fileStat.mtimeMs, fileStat.atimeMs);
           this.files.push(file);
           continue;
         } else if (fileStat.isDirectory()) {
@@ -55,7 +57,7 @@ export class FilesCleaner {
   }
 
   private getShaSync(file: File): string {
-    if(file.getSize() === 0){
+    if (file.getSize() === 0) {
       return 'none';
     }
 
@@ -65,9 +67,14 @@ export class FilesCleaner {
     return hash.digest('hex');
   }
 
-  public  processHash(): void {
-    for(const f of this.files){
+  public processHash(): void {
+    for (const f of this.files) {
       f.setHash(this.getShaSync(f));
+      if (!this.map.has(f.getHash())) {
+        this.map.set(f.getHash(), f);
+      } else {
+        this.dups.push(f);
+      }
     }
   }
 
@@ -80,6 +87,10 @@ export class FilesCleaner {
 
   public getFiles(): File[] {
     return this.files;
+  }
+
+  public getDupsLength(): number {
+    return this.dups.length;
   }
 
   public setDir(value: string) {

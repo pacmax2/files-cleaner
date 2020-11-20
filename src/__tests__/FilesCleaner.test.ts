@@ -6,9 +6,9 @@ it('Reads all files in ./ ', () => {
   return expect(cleaner.getFiles().length).toBeGreaterThan(0);
 });
 
-it('Creates hashses of all files ', async () => {
+it('Creates hashses of all files ', () => {
   let cleaner = new FilesCleaner();
   cleaner.read();
-  const data = await cleaner.processHash();
-  return expect(data).toEqual(undefined);
+  cleaner.processHash();
+  return expect(cleaner.getDupsLength()).toBeGreaterThanOrEqual(1);
 });
