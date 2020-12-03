@@ -10,5 +10,5 @@ it('Creates hashses of all files ', () => {
   let cleaner = new FilesCleaner();
   cleaner.read();
   cleaner.processHash();
-  return expect(cleaner.getDupsLength()).toBeGreaterThanOrEqual(1);
+  return expect(cleaner.getMapSize()).toBeGreaterThanOrEqual(1);
 });

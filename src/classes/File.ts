@@ -19,6 +19,8 @@ export default class File {
   }
 
   public getName(): string {
+    const splited: string[] = this.dir.split('/');
+    this.name = splited[splited.length - 1];
     return this.name;
   }
 

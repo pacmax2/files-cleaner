@@ -4,14 +4,41 @@ import File from './File';
 import crypto from 'crypto';
 
 export class FilesCleaner {
+  private ignoredFolders: Set<string>; // Ignore list, files and folders set for quick access
+  private ignoredFolderList: string[] = ['node_modules', '.git'];
+  private ignoredFiles: Set<string>; // Ignore list, files and folders set for quick access
+  private ignoredFileList: string[] = [
+    '.DS_Store',
+    '.gitignore',
+    '.npmignore',
+    '.prettierrc',
+    'LICENSE',
+    'yarn.lock',
+    'yarn-error.log',
+    'package-lock.json',
+    'package.json',
+    'jest.config.json',
+    '.prettierrc',
+    'tslint.json',
+  ];
+
   private dir: string;
   private files: File[] = [];
-  private map: Map<string, File>;
-  private dups: File[] = []; // duplicated files
+  private map: Map<string, File[]>;
 
   constructor(dir?: string) {
     this.dir = dir !== undefined ? dir : './';
-    this.map = new Map<string, File>();
+    this.map = new Map<string, File[]>();
+    this.ignoredFiles = new Set<string>();
+    this.ignoredFolders = new Set<string>();
+
+    for (const s of this.ignoredFileList) {
+      this.ignoredFiles.add(s);
+    }
+
+    for (const s of this.ignoredFolderList) {
+      this.ignoredFolders.add(s);
+    }
   }
 
   /**
@@ -27,11 +54,21 @@ export class FilesCleaner {
         const fileStat = fs.statSync(next);
         if (fileStat.isFile()) {
           const file: File = new File(next, fileStat.size, fileStat.ctimeMs, fileStat.mtimeMs, fileStat.atimeMs);
-          this.files.push(file);
+
+          if (!this.ignoredFiles.has(file.getName())) {
+            this.files.push(file);
+          } else {
+            // Ignored files else for verbose
+          }
+
           continue;
         } else if (fileStat.isDirectory()) {
-          const files = fs.readdirSync(next);
-          queue.push(...files.map((f) => join(next, f)));
+          if (!this.ignoredFolders.has(next)) {
+            const files = fs.readdirSync(next);
+            queue.push(...files.map((f) => join(next, f)));
+          } else {
+            // Ignored folders else for verbose
+          }
         }
       } catch (err) {
         throw new Error(err);
@@ -70,10 +107,27 @@ export class FilesCleaner {
   public processHash(): void {
     for (const f of this.files) {
       f.setHash(this.getShaSync(f));
-      if (!this.map.has(f.getHash())) {
-        this.map.set(f.getHash(), f);
+      if (this.map.has(f.getHash())) {
+        const dupArray: File[] = this.map.get(f.getHash());
+        dupArray.push(f);
       } else {
-        this.dups.push(f);
+        const newArray: File[] = [];
+        newArray.push(f);
+        this.map.set(f.getHash(), newArray);
+      }
+    }
+
+    // Cleaning the Map to only keep the dups
+    let dups: File[] = [];
+
+    for (const key of this.map.keys()) {
+      dups = this.map.get(key);
+
+      // Files with only 1 occurence
+      if (dups.length === 1) {
+        this.map.delete(key);
+      } else {
+        // Any operation to be done with the dups
       }
     }
   }
@@ -89,8 +143,8 @@ export class FilesCleaner {
     return this.files;
   }
 
-  public getDupsLength(): number {
-    return this.dups.length;
+  public getMapSize(): number {
+    return this.map.size;
   }
 
   public setDir(value: string) {
