@@ -1,5 +1,5 @@
 # File Cleaner
-Finds all duplicates in a directory and deletes them if requested.
+Finds all duplicates in a directory and remove/delete if requested.
 
 ##  How to use:
 

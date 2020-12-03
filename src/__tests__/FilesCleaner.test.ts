@@ -1,4 +1,5 @@
 import { FilesCleaner } from '../classes/FilesCleaner';
+import {TestFileGenerator} from 'test-file-generator';
 
 it('Reads all files in ./ ', () => {
   let cleaner = new FilesCleaner();
@@ -12,3 +13,10 @@ it('Creates hashses of all files ', () => {
   cleaner.processHash();
   return expect(cleaner.getMapSize()).toBeGreaterThanOrEqual(1);
 });
+
+
+// it('Generated duplicated files', () => {
+//   let cleaner = new FilesCleaner();
+//   let generator = new TestFileGenerator();
+
+// });
